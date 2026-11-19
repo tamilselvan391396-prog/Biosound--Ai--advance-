@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BioSound AI Advanced</title>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-audio@0.10.14"></script>
+<style>
+:root{--bg:#08111f;--panel:#111e30;--panel2:#17263a;--text:#edf5ff;--muted:#91a4bc;--green:#39e6a0;--border:#263b54}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
+header{padding:20px 5%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);background:#0b1728}
+.logo{font-size:22px;font-weight:bold}.logo span{color:var(--green)}.status{color:var(--muted);font-size:12px}
+main{max-width:1250px;margin:auto;padding:25px 18px 50px}
+.hero{margin:15px 0 25px}.hero h1{margin:0 0 8px;font-size:30px}.hero p{color:var(--muted);margin:0;line-height:1.5}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:19px;min-width:0}
+.card h2{font-size:16px;margin:0 0 16px}.full{grid-column:1/-1}
+.controls{display:flex;flex-wrap:wrap;gap:10px}
+button{border:0;border-radius:9px;padding:12px 17px;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}
+.primary{background:var(--green);color:#062016}.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border)}.danger{background:#542b39;color:#ffdce5}
+#statusText{color:var(--muted);margin-top:13px;font-size:13px}
+.result{font-size:25px;font-weight:bold;margin:10px 0;color:var(--green);overflow-wrap:anywhere}
+.muted{color:var(--muted);font-size:13px;line-height:1.5}
+.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.metric{background:var(--panel2);border-radius:10px;padding:13px;min-width:0}
+.metric strong{display:block;font-size:19px;margin-top:7px;overflow-wrap:anywhere}.metric small{color:var(--muted)}
+canvas{width:100%;height:190px;background:#07101c;border-radius:10px;display:block}
+.bar-row{margin:13px 0}.bar-label{display:flex;justify-content:space-between;font-size:13px;gap:8px}
+.bar-bg{height:8px;background:#26384d;border-radius:20px;margin-top:7px;overflow:hidden}
+.bar-fill{height:100%;background:var(--green);border-radius:20px}
+.history-item{padding:12px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:10px;font-size:13px}
+.history-item:last-child{border:0}.history-item strong{display:block;margin-bottom:4px}
+audio{width:100%;margin-top:12px}footer{color:var(--muted);text-align:center;padding:25px;font-size:12px}
+#recordingTime{color:var(--green);font-weight:bold}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.metric-grid{grid-template-columns:repeat(2,1fr)}.hero h1{font-size:25px}header{padding:16px}}
+</style>
+</head>
+<body>
+<header><div class="logo">BioSound <span>AI Advanced</span></div><div class="status" id="topStatus">● Ready</div></header>
+<main>
+<section class="hero"><h1>Advanced Sound Intelligence</h1><p>Listen, analyze and explore the sounds of nature with AI-assisted audio analysis.</p></section>
+<div class="grid">
+<section class="card"><h2>🎙️ Live Sound Detection</h2><div class="controls"><button class="primary" id="startBtn">Start Listening</button><button class="secondary" id="stopBtn" disabled>Stop</button></div><div id="statusText">Microphone is not active.</div><p class="muted">Allow microphone access when your browser asks for permission.</p></section>
+<section class="card"><h2>🧠 AI Sound Identification</h2><div class="muted">Current prediction</div><div class="result" id="prediction">Waiting for sound...</div><div class="muted" id="confidence">Confidence: --</div><div id="alternatives" class="muted" style="margin-top:12px">Alternative predictions will appear here.</div><div class="muted" id="modelStatus" style="margin-top:12px">AI model: Not loaded</div></section>
+<section class="card full"><h2>📊 Live Frequency Spectrum</h2><canvas id="spectrum" width="1000" height="250"></canvas><p class="muted">The spectrum displays the strength of different audio frequencies.</p></section>
+<section class="card full"><h2>🌈 Live Spectrogram</h2><canvas id="spectrogram" width="1000" height="250"></canvas><p class="muted">Frequency energy is drawn over time. Brighter areas indicate stronger energy.</p></section>
+<section class="card full"><h2>📈 Sound Measurements</h2><div class="metric-grid">
+<div class="metric"><small>Peak frequency</small><strong id="peak">-- Hz</strong></div>
+<div class="metric"><small>Spectral centroid</small><strong id="centroid">-- Hz</strong></div>
+<div class="metric"><small>RMS level</small><strong id="rms">--</strong></div>
+<div class="metric"><small>Approx. level</small><strong id="db">-- dBFS</strong></div>
+<div class="metric"><small>Zero crossing rate</small><strong id="zcr">--</strong></div>
+<div class="metric"><small>Sample rate</small><strong id="sampleRate">-- Hz</strong></div>
+</div></section>
+<section class="card"><h2>🔴 Audio Recording</h2><div class="controls"><button class="primary" id="recordBtn" disabled>Start Recording</button><button class="danger" id="recordStopBtn" disabled>Stop Recording</button></div><p class="muted">Recording time: <span id="recordingTime">00:00</span></p><audio id="audioPlayback" controls></audio><p class="muted">Recordings stay in this browser session. They are not uploaded to a server.</p></section>
+<section class="card"><h2>📚 Detection History</h2><div id="history"><p class="muted">Your saved detections will appear here.</p></div><button class="secondary" id="clearHistory" style="margin-top:12px">Clear History</button></section>
+</div></main>
+<footer>BioSound AI Advanced · Browser-based sound analysis<br><br>AI predictions are estimates, not guaranteed species identifications.</footer>
+<script>
+const $=id=>document.getElementById(id);
+let audioContext=null,analyser=null,microphone=null,processor=null,silentGain=null,classifier=null,active=false;
+let mediaRecorder=null,recordedChunks=[],recordingStart=0,recordingInterval=null,lastSavedPrediction="",lastSavedAt=0;
+const spectrumCanvas=$("spectrum"),spectrumCtx=spectrumCanvas.getContext("2d"),spectrogramCanvas=$("spectrogram"),spectrogramCtx=spectrogramCanvas.getContext("2d");
+let history=[];
+try{history=JSON.parse(localStorage.getItem("biosoundAdvancedHistory")||"[]");if(!Array.isArray(history))history=[];}catch{history=[];}
+function setStatus(message){$("statusText").textContent=message;$("topStatus").textContent=active?"● Listening":"● "+message;}
+function escapeHTML(value){return String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function saveHistory(label,score){const now=Date.now();if(label===lastSavedPrediction&&now-lastSavedAt<10000)return;lastSavedPrediction=label;lastSavedAt=now;history.unshift({label,score,time:new Date().toLocaleString()});history=history.slice(0,30);try{localStorage.setItem("biosoundAdvancedHistory",JSON.stringify(history));}catch{}renderHistory();}
+function renderHistory(){const area=$("history");if(!history.length){area.innerHTML='<p class="muted">Your saved detections will appear here.</p>';return;}area.innerHTML=history.map(item=>`<div class="history-item"><div><strong>${escapeHTML(item.label)}</strong><span class="muted">${escapeHTML(item.time)}</span></div><div>${Math.round(item.score*100)}%</div></div>`).join("");}
+$("clearHistory").onclick=()=>{if(!confirm("Clear all saved detections?"))return;history=[];localStorage.removeItem("biosoundAdvancedHistory");renderHistory();};
+async function loadAI(){try{$("modelStatus").textContent="AI model: Loading...";if(!window.FilesetResolver||!window.AudioClassifier)throw new Error("MediaPipe library did not load.");const files=await FilesetResolver.forAudioTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-audio@0.10.14/wasm");classifier=await AudioClassifier.createFromOptions(files,{baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/audio_classifier/yamnet/float32/1/yamnet.tflite"},runningMode:"AUDIO",maxResults:5,scoreThreshold:0.05});$("modelStatus").textContent="AI model: Ready";}catch(error){console.error(error);$("modelStatus").textContent="AI model unavailable: "+error.message;}}
+function resample(input,inputRate,outputRate){if(inputRate===outputRate)return new Float32Array(input);const ratio=inputRate/outputRate,out=new Float32Array(Math.floor(input.length/ratio));for(let i=0;i<out.length;i++){const p=i*ratio,l=Math.floor(p),r=Math.min(l+1,input.length-1),f=p-l;out[i]=input[l]*(1-f)+input[r]*f;}return out;}
+let audioQueue=new Float32Array(0),lastClassifyTime=0;
+function processAudioForAI(samples){if(!classifier)return;const joined=new Float32Array(audioQueue.length+samples.length);joined.set(audioQueue);joined.set(samples,audioQueue.length);audioQueue=joined;const size=15600;if(audioQueue.length<size||Date.now()-lastClassifyTime<1000)return;const window=audioQueue.slice(0,size);audioQueue=audioQueue.slice(size);lastClassifyTime=Date.now();try{const result=classifier.classify({sampleRate:16000,channelData:[window]});const categories=result?.[0]?.categories||[];if(!categories.length)return;categories.sort((a,b)=>b.score-a.score);const best=categories[0],label=best.categoryName||best.displayName||"Unknown sound";$("prediction").textContent=label;$("confidence").textContent="Confidence: "+(best.score*100).toFixed(1)+"%";$("alternatives").innerHTML=categories.slice(1,5).map(item=>`<div class="bar-row"><div class="bar-label"><span>${escapeHTML(item.categoryName||item.displayName||"Sound")}</span><span>${(item.score*100).toFixed(1)}%</span></div><div class="bar-bg"><div class="bar-fill" style="width:${Math.max(0,Math.min(100,item.score*100))}%"></div></div></div>`).join("");saveHistory(label,best.score);}catch(error){console.error("Classification error:",error);$("modelStatus").textContent="Classification error: "+error.message;}}
+async function startListening(){if(!navigator.mediaDevices?.getUserMedia){setStatus("Microphone is unavailable. Use HTTPS in a supported browser.");$("startBtn").disabled=false;return;}try{$("startBtn").disabled=true;setStatus("Requesting microphone permission...");const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});audioContext=new(window.AudioContext||window.webkitAudioContext)();await audioContext.resume();microphone=audioContext.createMediaStreamSource(stream);analyser=audioContext.createAnalyser();analyser.fftSize=2048;analyser.smoothingTimeConstant=.75;processor=audioContext.createScriptProcessor(4096,1,1);silentGain=audioContext.createGain();silentGain.gain.value=0;microphone.connect(analyser);microphone.connect(processor);processor.connect(silentGain);silentGain.connect(audioContext.destination);processor.onaudioprocess=e=>{if(active)processAudioForAI(resample(e.inputBuffer.getChannelData(0),audioContext.sampleRate,16000));};active=true;audioQueue=new Float32Array(0);lastClassifyTime=0;$("stopBtn").disabled=false;$("recordBtn").disabled=false;setStatus("Microphone active. Listening for sounds...");drawLoop();if(!classifier)loadAI();}catch(error){console.error(error);$("startBtn").disabled=false;setStatus("Microphone error: "+error.message);}}
+function stopListening(){active=false;if(processor){processor.disconnect();processor.onaudioprocess=null;}if(microphone)microphone.mediaStream.getTracks().forEach(t=>t.stop());if(audioContext)audioContext.close();audioContext=null;analyser=null;microphone=null;processor=null;silentGain=null;$("startBtn").disabled=false;$("stopBtn").disabled=true;$("recordBtn").disabled=true;if(mediaRecorder?.state==="recording")stopRecording();setStatus("Listening stopped.");}
+$("startBtn").onclick=startListening;$("stopBtn").onclick=stopListening;
+function drawLoop(){if(!active||!analyser)return;const data=new Uint8Array(analyser.frequencyBinCount),wave=new Float32Array(analyser.fftSize);analyser.getByteFrequencyData(data);analyser.getFloatTimeDomainData(wave);drawSpectrum(data);drawSpectrogram(data);updateMeasurements(data,wave);requestAnimationFrame(drawLoop);}
+function drawSpectrum(data){const w=spectrumCanvas.width,h=spectrumCanvas.height;spectrumCtx.fillStyle="#07101c";spectrumCtx.fillRect(0,0,w,h);const bw=w/data.length*2;for(let i=0;i<data.length;i++){const v=data[i]/255,height=v*h;spectrumCtx.fillStyle=`hsl(${145-v*100},85%,55%)`;spectrumCtx.fillRect(i*bw,h-height,Math.max(1,bw-1),height);}}
+function drawSpectrogram(data){const w=spectrogramCanvas.width,h=spectrogramCanvas.height;spectrogramCtx.drawImage(spectrogramCanvas,-2,0);for(let y=0;y<h;y++){const index=Math.floor((1-y/h)*(data.length-1)),value=data[index]||0,hue=220-value*.65;spectrogramCtx.fillStyle=`hsl(${hue},90%,${10+value*.3}%)`;spectrogramCtx.fillRect(w-2,y,2,1);}}
+function updateMeasurements(data,wave){const rate=audioContext.sampleRate,binHz=rate/analyser.fftSize;let peak=0,peakIndex=0,total=0,weighted=0,sum=0,cross=0;for(let i=0;i<data.length;i++){const v=data[i];if(v>peak){peak=v;peakIndex=i;}total+=v;weighted+=i*binHz*v;}for(let i=0;i<wave.length;i++){sum+=wave[i]*wave[i];if(i>0&&Math.sign(wave[i])!==Math.sign(wave[i-1]))cross++;}const rms=Math.sqrt(sum/wave.length),db=rms>0?20*Math.log10(rms):-100,centroid=total?weighted/total:0;$("peak").textContent=(peakIndex*binHz).toFixed(0)+" Hz";$("centroid").textContent=centroid.toFixed(0)+" Hz";$("rms").textContent=rms.toFixed(4);$("db").textContent=db.toFixed(1)+" dBFS";$("zcr").textContent=(cross/wave.length).toFixed(3);$("sampleRate").textContent=rate.toLocaleString()+" Hz";}
+function startRecording(){if(!microphone)return;try{recordedChunks=[];mediaRecorder=new MediaRecorder(microphone.mediaStream);mediaRecorder.ondataavailable=e=>{if(e.data.size)recordedChunks.push(e.data);};mediaRecorder.onstop=()=>{const blob=new Blob(recordedChunks,{type:mediaRecorder.mimeType||"audio/webm"});$("audioPlayback").src=URL.createObjectURL(blob);};mediaRecorder.start();recordingStart=Date.now();$("recordBtn").disabled=true;$("recordStopBtn").disabled=false;recordingInterval=setInterval(()=>{const seconds=Math.floor((Date.now()-recordingStart)/1000);$("recordingTime").textContent=String(Math.floor(seconds/60)).padStart(2,"0")+":"+String(seconds%60).padStart(2,"0");},500);}catch(error){alert("Recording error: "+error.message);}}
+function stopRecording(){if(!mediaRecorder||mediaRecorder.state!=="recording")return;mediaRecorder.stop();clearInterval(recordingInterval);$("recordBtn").disabled=!active;$("recordStopBtn").disabled=true;}
+$("recordBtn").onclick=startRecording;$("recordStopBtn").onclick=stopRecording;
+renderHistory();loadAI();
+</script>
+</body>
+</html>
